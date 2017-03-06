@@ -1,44 +1,50 @@
-%{!?php_inidir:  %global php_inidir   %{_sysconfdir}/php.d}
-%{!?__pecl:      %global __pecl       %{_bindir}/pecl}
-%{!?__php:       %global __php        %{_bindir}/php}
-
 %global pecl_name oauth
 %global with_zts  0%{?__ztsphp:1}
-%if "%{php_version}" < "5.6"
-%global ini_name  %{pecl_name}.ini
-%else
 %global ini_name  40-%{pecl_name}.ini
-%endif
+%global php       php56u
 
-Name:		php-pecl-oauth	
-Version:	1.2.3
-Release:	10%{?dist}
-Summary:	PHP OAuth consumer extension
-Group:		Development/Languages
-License:	BSD
-URL:		http://pecl.php.net/package/oauth
-Source0:	http://pecl.php.net/get/%{pecl_name}-%{version}.tgz
+Name:           %{php}-pecl-%{pecl_name}
+Version:        1.2.3
+Release:        1.ius%{?dist}
+Summary:        PHP OAuth consumer extension
+Group:          Development/Languages
+License:        BSD
+URL:            http://pecl.php.net/package/oauth
+Source0:        http://pecl.php.net/get/%{pecl_name}-%{version}.tgz
 
-BuildRequires:	php-devel
-BuildRequires:	php-pear
-BuildRequires:	libcurl-devel
-BuildRequires:	pcre-devel
+BuildRequires:  %{php}-devel
+BuildRequires:  %{php}-pear
+BuildRequires:  libcurl-devel
+BuildRequires:  pcre-devel
 
-Requires(post):	%{__pecl}
-Requires(postun):	%{__pecl}
-Requires:	php(zend-abi) = %{php_zend_api}
-Requires:	php(api) = %{php_core_api}
+Requires:       php(zend-abi) = %{php_zend_api}
+Requires:       php(api) = %{php_core_api}
 
-Provides:	php-pecl(%{pecl_name}) = %{version}
-Provides:	php-pecl(%{pecl_name})%{_isa} = %{version}
-Provides:	php-%{pecl_name} = %{version}
-Provides:	php-%{pecl_name}%{_isa} = %{version}
+Requires(post): %{php}-pear
+Requires(postun): %{php}-pear
 
-%if 0%{?fedora} < 20 && 0%{?rhel} < 7
-# Filter shared private
-%{?filter_provides_in: %filter_provides_in %{_libdir}/.*\.so$}
+# provide the stock name
+Provides:       php-pecl-%{pecl_name} = %{version}
+Provides:       php-pecl-%{pecl_name}%{?_isa} = %{version}
+
+# provide the stock and IUS names without pecl
+Provides:       php-%{pecl_name} = %{version}
+Provides:       php-%{pecl_name}%{?_isa} = %{version}
+Provides:       %{php}-%{pecl_name} = %{version}
+Provides:       %{php}-%{pecl_name}%{?_isa} = %{version}
+
+# provide the stock and IUS names in pecl() format
+Provides:       php-pecl(%{pecl_name}) = %{version}
+Provides:       php-pecl(%{pecl_name})%{?_isa} = %{version}
+Provides:       %{php}-pecl(%{pecl_name}) = %{version}
+Provides:       %{php}-pecl(%{pecl_name})%{?_isa} = %{version}
+
+# conflict with the stock name
+Conflicts:      php-pecl-%{pecl_name} < %{version}
+
+%{?filter_provides_in: %filter_provides_in %{php_extdir}/.*\.so$}
+%{?filter_provides_in: %filter_provides_in %{php_ztsextdir}/.*\.so$}
 %{?filter_setup}
-%endif
 
 
 %description
@@ -63,16 +69,18 @@ cp -pr NTS ZTS
 
 
 %build
-cd NTS
+pushd NTS
 %{_bindir}/phpize
 %configure --with-php-config=%{_bindir}/php-config
 make %{?_smp_mflags}
+popd
 
 %if %{with_zts}
-cd ../ZTS
+pushd ZTS
 %{_bindir}/zts-phpize
 %configure --with-php-config=%{_bindir}/zts-php-config
 make %{?_smp_mflags}
+popd
 %endif
 
 
@@ -83,7 +91,7 @@ make install -C NTS INSTALL_ROOT=%{buildroot}
 install -D -m 644 %{ini_name} %{buildroot}%{php_inidir}/%{ini_name}
 
 # Install XML package description
-install -D -m 644 package.xml %{buildroot}%{pecl_xmldir}/%{name}.xml
+install -D -p -m 644 package.xml %{buildroot}%{pecl_xmldir}/%{name}.xml
 
 %if %{with_zts}
 make install -C ZTS INSTALL_ROOT=%{buildroot}
@@ -91,10 +99,11 @@ install -D -m 644 %{ini_name} %{buildroot}%{php_ztsinidir}/%{ini_name}
 %endif
 
 # Test & Documentation
-cd NTS
+pushd NTS
 for i in $(grep 'role="doc"' ../package.xml | sed -e 's/^.*name="//;s/".*$//')
 do install -Dpm 644 $i %{buildroot}%{pecl_docdir}/%{pecl_name}/$i
 done
+popd
 
 
 %post
@@ -103,7 +112,7 @@ done
 
 %postun
 if [ $1 -eq 0 ]; then
-%{pecl_uninstall} %{pecl_name} >/dev/null || :
+    %{pecl_uninstall} %{pecl_name} >/dev/null || :
 fi
 
 
@@ -125,7 +134,7 @@ fi
 %doc %{pecl_docdir}/%{pecl_name}
 %{pecl_xmldir}/%{name}.xml
 
-%config(noreplace) %{_sysconfdir}/php.d/%{ini_name}
+%config(noreplace) %{php_inidir}/%{ini_name}
 %{php_extdir}/%{pecl_name}.so
 
 %if %{with_zts}
@@ -135,6 +144,9 @@ fi
 
 
 %changelog
+* Mon Mar 06 2017 Carl George <carl.george@rackspace.com> - 1.2.3-1.ius
+- Port from Fedora to IUS
+
 * Thu Feb 04 2016 Fedora Release Engineering <releng@fedoraproject.org> - 1.2.3-10
 - Rebuilt for https://fedoraproject.org/wiki/Fedora_24_Mass_Rebuild
 
