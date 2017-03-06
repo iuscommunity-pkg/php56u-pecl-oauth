@@ -57,6 +57,8 @@ user names and passwords.
 %setup -q -c
 mv %{pecl_name}-%{version} NTS
 
+sed -e '/LICENSE/s/role="doc"/role="src"/' -i package.xml
+
 cat >%{ini_name} << 'EOF'
 ; Enable %{pecl_name} extension module
 extension=%{pecl_name}.so
@@ -131,6 +133,7 @@ fi
 
 
 %files
+%license NTS/LICENSE
 %doc %{pecl_docdir}/%{pecl_name}
 %{pecl_xmldir}/%{pecl_name}.xml
 
@@ -147,6 +150,7 @@ fi
 * Mon Mar 06 2017 Carl George <carl.george@rackspace.com> - 1.2.3-1.ius
 - Port from Fedora to IUS
 - Install package.xml as %%{pecl_name}.xml, not %%{name}.xml
+- Install LICENSE correctly
 
 * Thu Feb 04 2016 Fedora Release Engineering <releng@fedoraproject.org> - 1.2.3-10
 - Rebuilt for https://fedoraproject.org/wiki/Fedora_24_Mass_Rebuild
