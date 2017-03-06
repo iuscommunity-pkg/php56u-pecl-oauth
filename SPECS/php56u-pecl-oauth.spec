@@ -91,7 +91,7 @@ make install -C NTS INSTALL_ROOT=%{buildroot}
 install -D -m 644 %{ini_name} %{buildroot}%{php_inidir}/%{ini_name}
 
 # Install XML package description
-install -D -p -m 644 package.xml %{buildroot}%{pecl_xmldir}/%{name}.xml
+install -D -p -m 644 package.xml %{buildroot}%{pecl_xmldir}/%{pecl_name}.xml
 
 %if %{with_zts}
 make install -C ZTS INSTALL_ROOT=%{buildroot}
@@ -107,7 +107,7 @@ popd
 
 
 %post
-%{pecl_install} %{pecl_xmldir}/%{name}.xml >/dev/null || :
+%{pecl_install} %{pecl_xmldir}/%{pecl_name}.xml >/dev/null || :
 
 
 %postun
@@ -132,7 +132,7 @@ fi
 
 %files
 %doc %{pecl_docdir}/%{pecl_name}
-%{pecl_xmldir}/%{name}.xml
+%{pecl_xmldir}/%{pecl_name}.xml
 
 %config(noreplace) %{php_inidir}/%{ini_name}
 %{php_extdir}/%{pecl_name}.so
@@ -146,6 +146,7 @@ fi
 %changelog
 * Mon Mar 06 2017 Carl George <carl.george@rackspace.com> - 1.2.3-1.ius
 - Port from Fedora to IUS
+- Install package.xml as %%{pecl_name}.xml, not %%{name}.xml
 
 * Thu Feb 04 2016 Fedora Release Engineering <releng@fedoraproject.org> - 1.2.3-10
 - Rebuilt for https://fedoraproject.org/wiki/Fedora_24_Mass_Rebuild
